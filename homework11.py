@@ -96,22 +96,13 @@ class HMM(object):
             
             for state in self.initial_probs:
                 prob_sum = 0
-                # top = -float('inf')
-                top = max([math.exp(probs[i-1][prev_state] + self.transition_probs[prev_state][state]) for prev_state in self.initial_probs])
-                print top
-                if top == 0:
-                    print i, state
-                    print [math.exp(probs[i-1][prev_state] + self.transition_probs[prev_state][state]) for prev_state in self.initial_probs]
-                    print [probs[i-1][prev_state] + self.transition_probs[prev_state][state] for prev_state in self.initial_probs]
-                    print [probs[i-1][prev_state] for prev_state in self.initial_probs]
-                    print [self.transition_probs[prev_state][state] for prev_state in self.initial_probs]
+                # top = max([probs[i-1][prev_state] + self.transition_probs[prev_state][state] for prev_state in self.initial_probs])
+                top = max([probs[i-1][prev_state] + self.transition_probs[prev_state][state] for prev_state in self.initial_probs])
                 for previous_state in self.initial_probs:
                     # top = max([math.exp(probs[i-1][prev_state] + self.transition_probs[prev_state][state]) for p])    
                     val = math.exp(probs[i-1][previous_state] + self.transition_probs[previous_state][state] - top)
                     prob_sum = prob_sum + val
-                    if top ==0:
-                        print probs[i-1][previous_state], self.transition_probs[previous_state][state], val, prob_sum
-                
+
                 prob_sum = top + math.log(prob_sum) + self.emission_probs[state][sequence[0]]
 
                 probs[i][state] = prob_sum
@@ -119,7 +110,15 @@ class HMM(object):
          
 
     def forward_probability(self, alpha):
-        pass
+        termination = alpha[len(alpha)-1]
+        high = max([termination[state] for state in termination])
+        total = 0
+        for state in termination:
+            total = total + math.exp(termination[state] - high)
+        result = high + math.log(total)
+        return result
+
+
 
     def backward(self, sequence):
         pass

@@ -57,6 +57,13 @@ class HMMTest(unittest.TestCase):
 		# 							3: -4569.956231590213,
 		# 							4: -4569.542222483007})
 
+	def test_forward_prob1(self):
+		s = "the cat ate the rat"
+		p = load_parameters("homework11_simple.pickle")
+		h = HMM(p)
+		self.assertEquals(h.forward_probability(h.forward(s)), -36.972292832050975)
+
+
 
 
 
