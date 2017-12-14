@@ -91,6 +91,8 @@ class HMM(object):
 
     def forward(self, sequence):
         probs = [{} for i in range(len(sequence))]
+
+        ##INITIALIZATION##
         probs[0] = {state: self.initial_probs[state] + self.emission_probs[state][sequence[0]] for state in self.initial_probs}
         
         ##INDUCTION##
@@ -105,8 +107,9 @@ class HMM(object):
                     val = math.exp(probs[i-1][previous_state] + self.transition_probs[previous_state][state] - top)
                     prob_sum = prob_sum + val
 
-                prob_sum = top + math.log(prob_sum) + self.emission_probs[state][sequence[0]]
-                probs[i][state] = prob_sum
+                p = top + math.log(prob_sum) + self.emission_probs[state][sequence[i]]
+
+                probs[i][state] = p
         return probs 
          
 
