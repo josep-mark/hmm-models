@@ -63,11 +63,11 @@ class HMMTest(unittest.TestCase):
 		h = HMM(p)
 		self.assertEquals(h.forward_probability(h.forward(s)), -36.972292832050975)
 
-	# def test_forward_prob2(self):
-	# 	s = load_corpus("Brown_sample.txt")
-	# 	p = load_parameters("homework11_prob_vector.pickle")
-	# 	h = HMM(p)
-	# 	self.assertEquals(h.forward_probability(h.forward(s)), -9201.34957430782)
+	def test_forward_prob2(self):
+		s = load_corpus("Brown_sample.txt")
+		p = load_parameters("homework11_prob_vector.pickle")
+		h = HMM(p)
+		self.assertEquals(h.forward_probability(h.forward(s)), -9201.34957430782)
 
 	# def test_forward_prob2(self):
 	# 	s = load_corpus("Brown_sample.txt")
@@ -91,23 +91,22 @@ class HMMTest(unittest.TestCase):
 		p = load_parameters("homework11_prob_vector.pickle")
 		h = HMM(p)
 		f = h.backward(s)
-		print f[1424]
 		self.assertEquals(f[1424], {1: -4553.117090965298,
 									2: -4553.249309905892,
 									3: -4553.085375790753,
 									4: -4553.140279571696})
 
-	# def test_backward_probs(self):
-	# 	s = "the cat ate the rat"
-	# 	p = load_parameters("homework11_simple.pickle")
-	# 	h = HMM(p)
-	# 	self.assertEquals(h.backward_probability(h.backward(s), s), -36.97229283205097)
+	def test_backward_probs(self):
+		s = "the cat ate the rat"
+		p = load_parameters("homework11_simple.pickle")
+		h = HMM(p)
+		self.assertEquals(h.backward_probability(h.backward(s), s), -36.97229283205097)
 
-	# def test_backward_probs2(self):
-	# 	s = load_corpus("Brown_sample.txt")
-	# 	p = load_parameters("homework11_prob_vector.pickle")
-	# 	h = HMM(p)
-	# 	self.assertEquals(h.backward_probability(h.backward(s), s), -9201.349574307758)
+	def test_backward_probs2(self):
+		s = load_corpus("Brown_sample.txt")
+		p = load_parameters("homework11_prob_vector.pickle")
+		h = HMM(p)
+		self.assertEquals(h.backward_probability(h.backward(s), s), -9201.349574307758)
 
 	# def test_xi_matrix(self):
 	# 	s = "the cat ate the rat"

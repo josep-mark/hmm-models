@@ -146,13 +146,14 @@ class HMM(object):
     def backward_probability(self, beta, sequence):
         ##sum i = 1 to N sum pi[i] * b[i][o1] * probs[1][state]
         initial_trellis = beta[0]
-        high = max([self.initial_probs[state]+self.emission_probs[state][sequence[0]] + beta[0][state] for state in self.initial_probs])
+        high = max([self.initial_probs[state] + self.emission_probs[state][sequence[0]] + initial_trellis[state] for state in self.initial_probs])
+        # print high
         total = 0
         for state in initial_trellis:
-            val = math.exp(self.initial_probs[state]+self.emission_probs[state][sequence[0]] + beta[0][state] - high)
+            val = math.exp(self.initial_probs[state]+self.emission_probs[state][sequence[0]] + initial_trellis[state] - high)
             total = total + val 
-        result = math.exp(total) + high
-        return high
+        result = math.log(total) + high
+        return result
 
     def forward_backward(self, sequence):
         pass    
