@@ -160,11 +160,29 @@ class HMM(object):
 
     def xi_matrix(self, t, sequence, alpha, beta):
         greek_letter = {state: {state_2: 0.0 for state_2 in self.initial_probs} for state in self.initial_probs}
+        # denom = self.forward_probability(alpha)
+        denom = self.xi_helper(t, alpha, beta, sequence)
         for i in self.initial_probs:
             for j in self.initial_probs:
                 num = alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j]
-                denom = 1
-                greek_letter[i][j] = val
+                greek_letter[i][j] = num - denom
+        return greek_letter
+
+    def xi_helper(self, t, alpha, beta, sequence):
+        # tops = -float('inf')
+        # for i in self.initial_probs: 
+        #     for j in self.initial_probs:
+        #         x = alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j]
+        #         if x > tops:
+        #             tops = x
+        tops = max([alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j] 
+            for i in self.initial_probs for j in self.initial_probs])
+        total = 0
+        for i in self.initial_probs:
+            for j in self.initial_probs:
+                total = total + math.exp(alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j] - tops)
+        result = math.log(total) + tops
+        return result
 
     def update(self, sequence, cutoff_value):
         pass
