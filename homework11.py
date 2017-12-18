@@ -156,7 +156,82 @@ class HMM(object):
         return result
 
     def forward_backward(self, sequence):
-        pass    
+        alpha = self.forward(sequence)
+        beta = self.backward(sequence)
+      
+        xi_matrices = {i: self.xi_matrix(i, sequence, alpha, beta) for i in range(len(sequence)-2)}
+        initial_prime = deepcopy(self.initial_probs)
+        transition_prime = deepcopy(self.transition_probs)
+        emission_prime = deepcopy(self.emission_probs)
+        ###INITIAL####
+        for i in self.initial_probs:
+            initial_prime[i] = self.calculate_yi(xi_matrices[0], i)
+        ###TRANSITION####
+        for i in self.initial_probs:
+            for j in self.initial_probs:
+                t_num = 0
+                t_denom = 0
+                t_num_max = max([xi_matrices[t][i][j] for t in range(len(sequence)-2)])
+                denom_max = max([self.calculate_yi(m, i) for t, m in xi_matrices.iteritems()])
+                for t in range(len(sequence)-2):
+                    t_num = t_num + math.exp(xi_matrices[t][i][j] - t_num_max)
+                    # e_num = e_num + math.exp(self.calculate_yi(xi_matrices[t], i))
+                    t_denom = t_denom + math.exp(self.calculate_yi(xi_matrices[t], i) - denom_max)
+                    # t_denom = math.exp(xi_matrices[t][i])
+                t_num = math.log(t_num) + t_num_max
+                # e_x = math.log(e_num) + e_num_max
+                t_denom = math.log(t_denom) + denom_max
+                # print transition_prime[i]
+                # print transition_prime[i][j]
+                transition_prime[i][j] = t_num - t_denom
+                # emission_prime[i]
+        ###EMISSION####
+        ###0 -> T-1
+        for i in self.initial_probs:
+            for symbol in self.emission_probs[i]:
+                num = 0
+                denom = 0
+                num_max = max([self.calculate_yi(xi_matrices[t], i) for t in range(len(sequence)-2) if sequence[t] == symbol ])
+                denom_max = max([self.calculate_yi(m, i) for t, m in xi_matrices.iteritems()])
+                
+                final_num = alpha[len(sequence)-1][i] + beta[len(sequence)-1][i]
+                final_max = max([(alpha[len(sequence)-1][i] + beta[len(sequence)-1][i]) for i in self.initial_probs])
+                final_denom = sum([math.exp(alpha[len(sequence)-1][j] + beta[len(sequence)-1][j] - final_max) for j in self.initial_probs])
+                final_denom = math.log(final_denom) + final_max
+                final_yi = final_num - final_denom
+
+                if final_yi > num_max:
+                    num_max = final_yi
+                if final_yi > denom_max:
+                    denom_max = final_yi
+
+                for t in range(len(sequence)-2):
+                    if sequence[t] == symbol:
+                        num = num + math.exp(self.calculate_yi(xi_matrices[t], i) - num_max)
+                    denom = denom + math.exp(self.calculate_yi(xi_matrices[t], i) - denom_max)
+                
+                if sequence[len(sequence)-1] == symbol:
+                    num = num + math.exp(final_yi - num_max)
+                denom = denom + math.exp(final_yi - denom_max) 
+                x = num_max + math.log(num)
+                y = denom_max + math.log(denom)
+                emission_prime[i][symbol] = x - y
+        return (initial_prime, transition_prime, emission_prime)
+
+
+
+    def calculate_yi(self, xi_matrix, i):
+        top = max([xi_matrix[i][j] for j in self.initial_probs])
+        total = sum([math.exp(xi_matrix[i][j]-top) for j in self.initial_probs])
+        result = math.log(total) + top
+        return result
+    # def calculate_emission_num(self, t, sequence, xi_matrix, i):
+        # observed = sequence[t]
+        # for state in self.emission_probs:
+
+        # top = max([self.emission_probs[state] *1 for t in range(len(sequence))])
+        # for state in self.emission_probs[0]:
+
 
     def xi_matrix(self, t, sequence, alpha, beta):
         greek_letter = {state: {state_2: 0.0 for state_2 in self.initial_probs} for state in self.initial_probs}
@@ -181,7 +256,6 @@ class HMM(object):
         for i in self.initial_probs:
             for j in self.initial_probs:
                 total = total + math.exp(alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j] - tops)
-        result = math.log(total) + tops
         return result
 
     def update(self, sequence, cutoff_value):
@@ -192,19 +266,13 @@ class HMM(object):
 ############################################################
 
 feedback_question_1 = """
-Type your response here.
-Your response may span multiple lines.
-Do not include these instructions in your response.
+~10 hrs
 """
 
 feedback_question_2 = """
-Type your response here.
-Your response may span multiple lines.
-Do not include these instructions in your response.
+most challenging was the forward-backward step and debugging. 
 """
 
 feedback_question_3 = """
-Type your response here.
-Your response may span multiple lines.
-Do not include these instructions in your response.
+I liked the eatly parts.
 """
