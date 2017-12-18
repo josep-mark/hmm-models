@@ -191,11 +191,11 @@ class HMM(object):
             for symbol in self.emission_probs[i]:
                 num = 0
                 denom = 0
-                num_max = max([self.calculate_yi(xi_matrices[t], i) for t in range(len(sequence)-2) if sequence[t] == symbol ])
+                num_max = max([self.calculate_yi(xi_matrices[t], i) for t in range(len(sequence)-2) if sequence[t] == symbol])
                 denom_max = max([self.calculate_yi(m, i) for t, m in xi_matrices.iteritems()])
                 
                 final_num = alpha[len(sequence)-1][i] + beta[len(sequence)-1][i]
-                final_max = max([(alpha[len(sequence)-1][i] + beta[len(sequence)-1][i]) for i in self.initial_probs])
+                final_max = max([(alpha[len(sequence)-1][j] + beta[len(sequence)-1][j]) for j in self.initial_probs])
                 final_denom = sum([math.exp(alpha[len(sequence)-1][j] + beta[len(sequence)-1][j] - final_max) for j in self.initial_probs])
                 final_denom = math.log(final_denom) + final_max
                 final_yi = final_num - final_denom
@@ -269,7 +269,7 @@ class HMM(object):
             self.emission_probs = probs[2]
             alpha2 = self.forward(sequence)
             next = self.forward_probability(alpha2)
-            if prev - next < 1:
+            if  abs(prev - next) < 1:
                 break
 
 ############################################################
