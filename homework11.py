@@ -66,11 +66,13 @@ class HMM(object):
     initial_probs = {}
     transition_probs = {}
     emission_probs = {}
+    states = []
     
     def __init__(self, probabilities):
         self.initial_probs = probabilities[0]
         self.transition_probs = probabilities[1]
-        self.emission_probs = probabilities[2]    
+        self.emission_probs = probabilities[2]   
+        self.states = [state for state in self.initial_probs] 
 
     def get_parameters(self):
         return (self.convert_parameters(self.initial_probs, 0), self.convert_parameters(self.transition_probs, 1), self.emission_probs, 2)
@@ -101,26 +103,37 @@ class HMM(object):
             for state in self.initial_probs:
                 prob_sum = 0
                 # top = max([probs[i-1][prev_state] + self.transition_probs[prev_state][state] for prev_state in self.initial_probs])
-                top = max([probs[i-1][prev_state] + self.transition_probs[prev_state][state] for prev_state in self.initial_probs])
-                for previous_state in self.initial_probs:
-                    # top = max([math.exp(probs[i-1][prev_state] + self.transition_probs[prev_state][state]) for p])    
-                    val = math.exp(probs[i-1][previous_state] + self.transition_probs[previous_state][state] - top)
-                    prob_sum = prob_sum + val
+                vals = [probs[i-1][prev_state] + self.transition_probs[prev_state][state] for prev_state in self.initial_probs]
+                top = max(vals)
+                prob_sum = sum([math.exp(val - top) for val in vals])
+                prob_sum = math.log(prob_sum) + top  + self.emission_probs[state][sequence[i]]
+                probs[i][state] = prob_sum 
+                # top = max([probs[i-1][prev_state] + self.transition_probs[prev_state][state] for prev_state in self.initial_probs])
+                
+                # for previous_state in self.initial_probs:
+                #     # top = max([math.exp(probs[i-1][prev_state] + self.transition_probs[prev_state][state]) for p])    
+                #     val = math.exp(probs[i-1][previous_state] + self.transition_probs[previous_state][state] - top)
+                #     prob_sum = prob_sum + val
 
-                p = top + math.log(prob_sum) + self.emission_probs[state][sequence[i]]
+                # p = top + math.log(prob_sum) + self.emission_probs[state][sequence[i]]
 
-                probs[i][state] = p
+                # probs[i][state] = p
         return probs 
          
 
     def forward_probability(self, alpha):
         termination = alpha[len(alpha)-1]
-        high = max([termination[state] for state in termination])
-        total = 0
-        for state in termination:
-            total = total + math.exp(termination[state] - high)
-        result = high + math.log(total)
-        return result
+        vals = [termination[state] for state in termination]
+        high = max(vals)
+        total = sum([math.exp(val - high) for val in vals])
+        return math.log(total) + high
+        
+        # high = max([termination[state] for state in termination])
+        # total = 0
+        # for state in termination:
+        #     total = total + math.exp(termination[state] - high)
+        # result = high + math.log(total)
+        # return result
 
     def backward(self, sequence):
         probs = [{} for i in range(len(sequence))]
@@ -134,32 +147,42 @@ class HMM(object):
             ## current time + 1
             for state in self.initial_probs:
                 probs_sum = 0
-                high = max([self.transition_probs[state][next_state] + self.emission_probs[next_state][sequence[i+1]] + probs[i+1][next_state] for next_state in self.initial_probs])
-                for next_state in self.initial_probs:
-                    log_prob = self.transition_probs[state][next_state] + self.emission_probs[next_state][sequence[i+1]] + probs[i+1][next_state] - high
-                    exp = math.exp(log_prob)
-                    probs_sum = probs_sum + exp
-                result = math.log(probs_sum) + high
-                probs[i][state] = result
+                vals = [self.transition_probs[state][next_state] + self.emission_probs[next_state][sequence[i+1]] + probs[i+1][next_state] 
+                        for next_state in self.initial_probs]
+                high = max(vals)
+                total = sum([math.exp(val-high) for val in vals])
+                probs[i][state] = math.log(total) + high
         return probs
+        #         high = max([self.transition_probs[state][next_state] + self.emission_probs[next_state][sequence[i+1]] + probs[i+1][next_state] for next_state in self.initial_probs])
+        #         for next_state in self.initial_probs:
+        #             log_prob = self.transition_probs[state][next_state] + self.emission_probs[next_state][sequence[i+1]] + probs[i+1][next_state] - high
+        #             exp = math.exp(log_prob)
+        #             probs_sum = probs_sum + exp
+        #         result = math.log(probs_sum) + high
+        #         probs[i][state] = result
+        # return probs
 
     def backward_probability(self, beta, sequence):
         ##sum i = 1 to N sum pi[i] * b[i][o1] * probs[1][state]
         initial_trellis = beta[0]
-        high = max([self.initial_probs[state] + self.emission_probs[state][sequence[0]] + initial_trellis[state] for state in self.initial_probs])
-        # print high
-        total = 0
-        for state in initial_trellis:
-            val = math.exp(self.initial_probs[state]+self.emission_probs[state][sequence[0]] + initial_trellis[state] - high)
-            total = total + val 
-        result = math.log(total) + high
-        return result
+        vals = [self.initial_probs[state] + self.emission_probs[state][sequence[0]] + initial_trellis[state] for state in self.initial_probs]
+        high = max(vals)
+        total = sum([math.exp(val-high) for val in vals])
+        return math.log(total) + high
+        # high = max([self.initial_probs[state] + self.emission_probs[state][sequence[0]] + initial_trellis[state] for state in self.initial_probs])
+        # # print high
+        # total = 0
+        # for state in initial_trellis:
+        #     val = math.exp(self.initial_probs[state]+self.emission_probs[state][sequence[0]] + initial_trellis[state] - high)
+        #     total = total + val 
+        # result = math.log(total) + high
+        # return result
 
     def forward_backward(self, sequence):
         alpha = self.forward(sequence)
         beta = self.backward(sequence)
       
-        xi_matrices = {i: self.xi_matrix(i, sequence, alpha, beta) for i in range(len(sequence)-2)}
+        xi_matrices = {t: self.xi_matrix(t, sequence, alpha, beta) for t in range(len(sequence)-2)}
         initial_prime = deepcopy(self.initial_probs)
         transition_prime = deepcopy(self.transition_probs)
         emission_prime = deepcopy(self.emission_probs)
@@ -175,16 +198,10 @@ class HMM(object):
                 denom_max = max([self.calculate_yi(m, i) for t, m in xi_matrices.iteritems()])
                 for t in range(len(sequence)-2):
                     t_num = t_num + math.exp(xi_matrices[t][i][j] - t_num_max)
-                    # e_num = e_num + math.exp(self.calculate_yi(xi_matrices[t], i))
                     t_denom = t_denom + math.exp(self.calculate_yi(xi_matrices[t], i) - denom_max)
-                    # t_denom = math.exp(xi_matrices[t][i])
-                t_num = math.log(t_num) + t_num_max
-                # e_x = math.log(e_num) + e_num_max
-                t_denom = math.log(t_denom) + denom_max
-                # print transition_prime[i]
-                # print transition_prime[i][j]
-                transition_prime[i][j] = t_num - t_denom
-                # emission_prime[i]
+                x = math.log(t_num) + t_num_max
+                y = math.log(t_denom) + denom_max
+                transition_prime[i][j] = x - y
         ###EMISSION####
         ###0 -> T-1
         for i in self.initial_probs:
@@ -221,41 +238,30 @@ class HMM(object):
 
 
     def calculate_yi(self, xi_matrix, i):
-        top = max([xi_matrix[i][j] for j in self.initial_probs])
-        total = sum([math.exp(xi_matrix[i][j]-top) for j in self.initial_probs])
+        top = max([xi_matrix[i][j] for j in self.states])
+        total = sum([math.exp(xi_matrix[i][j]-top) for j in self.states])
         result = math.log(total) + top
         return result
-    # def calculate_emission_num(self, t, sequence, xi_matrix, i):
-        # observed = sequence[t]
-        # for state in self.emission_probs:
-
-        # top = max([self.emission_probs[state] *1 for t in range(len(sequence))])
-        # for state in self.emission_probs[0]:
 
 
     def xi_matrix(self, t, sequence, alpha, beta):
-        greek_letter = {state: {state_2: 0.0 for state_2 in self.initial_probs} for state in self.initial_probs}
-        # denom = self.forward_probability(alpha)
+        greek_letter = {state: {state_2: None for state_2 in self.states} for state in self.states}
         denom = self.xi_helper(t, alpha, beta, sequence)
-        for i in self.initial_probs:
-            for j in self.initial_probs:
+        for i in self.states:
+            for j in self.states:
                 num = alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j]
-                greek_letter[i][j] = num - denom
+                res = num - denom
+                # print num, denom, res
+                greek_letter[i][j] = res
         return greek_letter
 
     def xi_helper(self, t, alpha, beta, sequence):
-        # tops = -float('inf')
-        # for i in self.initial_probs: 
-        #     for j in self.initial_probs:
-        #         x = alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j]
-        #         if x > tops:
-        #             tops = x
-        tops = max([alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j] 
-            for i in self.initial_probs for j in self.initial_probs])
+        tops = max([alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j] for i in self.states for j in self.states])
         total = 0
-        for i in self.initial_probs:
-            for j in self.initial_probs:
-                total = total + math.exp(alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j] - tops)
+        for i in self.states:
+            for j in self.states:
+                s = alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j] - tops
+                total = total + math.exp(s)
         result = math.log(total) + tops
         return result
 
@@ -269,7 +275,7 @@ class HMM(object):
             self.emission_probs = probs[2]
             alpha2 = self.forward(sequence)
             next = self.forward_probability(alpha2)
-            if  abs(prev - next) < 1:
+            if  abs(prev - next) < cutoff_value:
                 break
 
 ############################################################
@@ -277,11 +283,11 @@ class HMM(object):
 ############################################################
 
 feedback_question_1 = """
-~10 hrs
+~18 hrs
 """
 
 feedback_question_2 = """
-most challenging was the forward-backward step and debugging.
+most challenging was the forward-backward step and debugging why every answer is off by .01 or less.
 """
 
 feedback_question_3 = """
