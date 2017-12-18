@@ -256,10 +256,21 @@ class HMM(object):
         for i in self.initial_probs:
             for j in self.initial_probs:
                 total = total + math.exp(alpha[t][i] + self.transition_probs[i][j] + self.emission_probs[j][sequence[t+1]] + beta[t+1][j] - tops)
+        result = math.log(total) + tops
         return result
 
     def update(self, sequence, cutoff_value):
-        pass
+        while True:
+            alpha = self.forward(sequence)
+            prev = self.forward_probability(alpha)
+            probs = self.forward_backward(sequence)
+            self.initial_probs = probs[0]
+            self.transition_probs = probs[1]
+            self.emission_probs = probs[2]
+            alpha2 = self.forward(sequence)
+            next = self.forward_probability(alpha2)
+            if prev - next < 1:
+                break
 
 ############################################################
 # Section 2: Feedback
@@ -270,9 +281,9 @@ feedback_question_1 = """
 """
 
 feedback_question_2 = """
-most challenging was the forward-backward step and debugging. 
+most challenging was the forward-backward step and debugging.
 """
 
 feedback_question_3 = """
-I liked the eatly parts.
+The forward-backward algorithm was interesting but a pain to implement
 """
